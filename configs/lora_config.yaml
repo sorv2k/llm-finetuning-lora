@@ -1,0 +1,39 @@
+model:
+  name: "microsoft/phi-2"          # swap to "meta-llama/Meta-Llama-3-8B" if VRAM permits
+  trust_remote_code: true          # required for Phi-2
+
+lora:
+  r: 16                            # rank; 8–32 is the sweet spot for QA
+  lora_alpha: 32                   # scale = lora_alpha / r = 2.0
+  lora_dropout: 0.05
+  bias: "none"
+  task_type: "CAUSAL_LM"
+  target_modules:                  # Phi-2's attention projection layers
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "dense"                      # Phi-2 uses 'dense' for output projection, not 'o_proj'
+
+training:
+  dataset: "rajpurkar/squad"
+  max_train_samples: 5000          # subset for manageable training time
+  max_eval_samples: 200
+  max_seq_length: 512
+  epochs: 3
+  per_device_train_batch_size: 4
+  gradient_accumulation_steps: 4   # effective batch size = 16
+  learning_rate: 2.0e-4
+  weight_decay: 0.01
+  warmup_ratio: 0.03
+  lr_scheduler: "cosine"
+  fp16: true                       # set false for CPU-only runs
+  logging_steps: 50
+  save_steps: 500
+  output_dir: "./outputs/adapter_weights"
+  seed: 42
+
+inference:
+  max_new_tokens: 200
+  temperature: 0.7
+  do_sample: true
+  repetition_penalty: 1.1
